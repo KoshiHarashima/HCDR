@@ -50,7 +50,17 @@ df['DAYS_LAST_PHONE_CHANGE'] = df['DAYS_LAST_PHONE_CHANGE'].fillna(df['DAYS_LAST
 df['YEARS_LAST_PHONE_CHANGE'] = df['YEARS_LAST_PHONE_CHANGE'].fillna(df['YEARS_LAST_PHONE_CHANGE'].median())
 
 #As for OWN_CAR_AGE(!!)
+#As for FLAG_OWN_CAR
+df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'F'), 'FLAG_OWN_CAR'] = 'N'
+df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 0), 'FLAG_OWN_CAR'] = 'N'
+df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 1), 'FLAG_OWN_CAR'] = 'N'
+df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 2), 'FLAG_OWN_CAR'] = 'Y'
+df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 3), 'FLAG_OWN_CAR'] = 'Y'     
 df['OWN_CAR_AGE'] = df['OWN_CAR_AGE'].fillna(0)
+
+#As for FLAG_OWN_REALLTY(!!)
+df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['House / apartment', 'Co-op apartment', 'Office apartment'])),'FLAG_OWN_REALTY'] = 'Y'
+df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['Municipal apartment', 'Rented apartment', 'With parents'])),'FLAG_OWN_REALTY'] = 'N'  
 
 #As for AMT_BUREAU, OBS, and DEF
 df['AMT_REQ_CREDIT_BUREAU_HOUR'] = df['AMT_REQ_CREDIT_BUREAU_HOUR'].fillna(0)
@@ -60,15 +70,4 @@ df['AMT_REQ_CREDIT_BUREAU_YEAR'] = df['AMT_REQ_CREDIT_BUREAU_YEAR'].fillna(0)
 df['OBS_30_CNT_SOCIAL_CIRCLE'] = df['OBS_30_CNT_SOCIAL_CIRCLE'].fillna(0)
 df['DEF_30_CNT_SOCIAL_CIRCLE'] = df['DEF_30_CNT_SOCIAL_CIRCLE'].fillna(0)
 df['OBS_60_CNT_SOCIAL_CIRCLE'] = df['OBS_60_CNT_SOCIAL_CIRCLE'].fillna(0)
-df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)       
-
-#As for FLAG_OWN_REALLTY
-df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['House / apartment', 'Co-op apartment', 'Office apartment'])),'FLAG_OWN_REALTY'] = 'Y'
-df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['Municipal apartment', 'Rented apartment', 'With parents'])),'FLAG_OWN_REALTY'] = 'N'   
-
-#As for FLAG_OWN_CAR
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'F'), 'FLAG_OWN_CAR'] = 'N'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 0), 'FLAG_OWN_CAR'] = 'N'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 1), 'FLAG_OWN_CAR'] = 'N'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 2), 'FLAG_OWN_CAR'] = 'Y'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 3), 'FLAG_OWN_CAR'] = 'Y'                                           
+df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)                                              
