@@ -44,7 +44,30 @@ df['AMT_REQ_CREDIT_BUREAU_YEAR'] = df['AMT_REQ_CREDIT_BUREAU_YEAR'].fillna(0)
 df['OBS_30_CNT_SOCIAL_CIRCLE'] = df['OBS_30_CNT_SOCIAL_CIRCLE'].fillna(0)
 df['DEF_30_CNT_SOCIAL_CIRCLE'] = df['DEF_30_CNT_SOCIAL_CIRCLE'].fillna(0)
 df['OBS_60_CNT_SOCIAL_CIRCLE'] = df['OBS_60_CNT_SOCIAL_CIRCLE'].fillna(0)
-df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)        
+df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)    
+
+#About Time
+def create_day_to_year(df, ls_cols, newcols):
+  df[newcols] = round(np.abs(df[ls_cols[0]])/365)
+  return df
+create_day_to_year(df, ['DAYS_BIRTH'], 'AGE')
+create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
+create_day_to_year(df,['DAYS_EMPLOYED'],'YEARS_EMPLOYED')
+create_day_to_year(df, ['DAYS_ID_PUBLISH'], 'YEARS_ID_PUBLISH')
+create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
+create_day_to_year(df, ['DAYS_LAST_PHONE_CHANGE'], 'YEARS_LAST_PHONE_CHANGE')
+
+#まだNaNがDaysに残っていることに注意
+def fill_missing_by_group_vectorized(df, group_cols, cols_to_fill):
+    for col in cols_to_fill:
+        grouped = df.groupby(group_cols)[col]
+        median_values = grouped.transform('median')
+        df[col] = df[col].fillna(mean_values)
+
+group_cols = ['YEARS_EMPLOYED_BINNED', 'AGE_BINNED', 'OCCUPATION_TYPE', 'NAME_EDUCATION_TYPE']
+cols_to_fill = ['AMT_ANNUITY', 'AMT_GOODS_PRICE', 'DAYS_LAST_PHONE_CHANGE']
+fill_missing_by_group_vectorized(df, group_cols, cols_to_fill)
+
 
 #As for AMT_ANNUITY(!!)
 df['AMT_ANNUITY'] = df['AMT_ANNUITY'] .fillna(df['AMT_ANNUITY'].median())
