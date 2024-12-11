@@ -61,17 +61,6 @@ df['has_job'] = (df['DAYS_EMPLOYED']>0).astype(int)
 df['LONG_EMPLOYMENT'] = (df['DAYS_EMPLOYED'] < -1700).astype(int)
 df['RETIREMENT_AGE'] = (df['DAYS_EMPLOYED'] < -14000).astype(int)
 
-#About Time
-def create_day_to_year(df, ls_cols, newcols):
-  df[newcols] = round(np.abs(df[ls_cols[0]])/365)
-  return df
-create_day_to_year(df, ['DAYS_BIRTH'], 'AGE')
-create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
-create_day_to_year(df,['DAYS_EMPLOYED'],'YEARS_EMPLOYED')
-create_day_to_year(df, ['DAYS_ID_PUBLISH'], 'YEARS_ID_PUBLISH')
-create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
-create_day_to_year(df, ['DAYS_LAST_PHONE_CHANGE'], 'YEARS_LAST_PHONE_CHANGE')
-
 #As for DAYS_EMPLOYEDとYEARS_EMPLOYED
 df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'YEARS_EMPLOYED'] = - df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'AGE'] + 20
 df['YEARS_EMPLOYED_PERCENT'] = df['YEARS_EMPLOYED'] / (df['AGE'] - 20)
