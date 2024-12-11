@@ -1,0 +1,51 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import KFold
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
+
+def train_and_predict(X_train, y_train, X_test, models, params, cv=5, scoring='roc_auc'):
+    oof_preds = np.zeros((X_train.shape[0], len(models)))
+    test_preds_all = np.zeros((X_test.shape[0], len(models), cv))
+
+    kf = KFold(n_splits=cv, shuffle=True, random_state=42)
+    for fold, (train_index, val_index) in enumerate(tqdm(kf.split(X_train), desc="KFold")):
+        X_tr, X_val = X_train.iloc[train_index], X_train.iloc[val_index]
+        y_tr, y_val = y_train[train_index], y_train[val_index]
+
+        for i, (model_class, model_params) in enumerate(zip(models, params)):
+            model = model_class(**model_params)
+            model.fit(X_tr, y_tr)
+            oof_preds[val_index, i] = model.predict_proba(X_val)[:, 1]
+            test_preds_all[:, i, fold] = model.predict_proba(X_test)[:, 1]
+
+    test_preds = test_preds_all.mean(axis=2)
+    return oof_preds, test_preds
+
+# モデルの定義
+models = [
+    (LogisticRegression, {'C': 0.28261952263439033, ...}),
+    # 他のモデルを追加する
+]
+
+# パイプラインの定義
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('model', RandomForestClassifier())
+])
+
+# データの準備
+# ...
+
+# 特徴量エンジニアリング
+# ...
+
+# クロスバリデーションと予測
+oof_preds, test_preds = train_and_predict(X_train, y_train, X_test, models, params)
+
+# 評価
+for i, model in enumerate(models):
+    print(f"Model {i+1}: {roc_auc_score(y_train, oof_preds[:, i])}")
