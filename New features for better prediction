@@ -1,0 +1,205 @@
+#Create features about credibility_1
+median_income_by_occupation = df.groupby('OCCUPATION_TYPE')['AMT_INCOME_TOTAL'].median()
+df['TRUSTFUL_occ'] = (df['AMT_INCOME_TOTAL'] / df['OCCUPATION_TYPE'].map(median_income_by_occupation) - 1) **2
+median_income_by_education = df.groupby('NAME_EDUCATION_TYPE')['AMT_INCOME_TOTAL'].median()
+df['TRUSTFUL_edu'] = (df['AMT_INCOME_TOTAL'] / df['OCCUPATION_TYPE'].map(median_income_by_education) - 1) **2
+df['TRUSTFUL_edu'] = df['TRUSTFUL_occ'].fillna(0)
+
+#Create features about credibility_2
+def calculate_normalized_rank(df, column):
+    grouped = df.groupby('ORGANIZATION_TYPE')
+
+    def normalize_rank(x):
+        min_rank = x.rank(method='min').min()
+        max_rank = x.rank(method='max').max()
+        return (x.rank(method='dense') - min_rank) / (max_rank - min_rank)
+
+    df[f'Orank_{column}'] = grouped[column].transform(normalize_rank)
+    return df
+column1 = ['AMT_INCOME_TOTAL']
+column2 = ['AMT_CREDIT']
+column3 = ['AMT_ANNUITY']
+column4 = ['DAYS_BIRTH']
+df = calculate_normalized_rank(df, column1)
+df = calculate_normalized_rank(df, column2)
+df3 = calculate_normalized_rank(df, column)
+df4 = calculate_normalized_rank(df, column)
+
+# this should be done after imputing
+#Create features about credibility_2
+def calculate_normalized_rank(df, column):
+    grouped = df.groupby('OCCUPATION_TYPE')
+
+    def normalize_rank(x):
+        min_rank = x.rank(method='min').min()
+        max_rank = x.rank(method='max').max()
+        return (x.rank(method='dense') - min_rank) / (max_rank - min_rank)
+
+    df[f'rank_{column}'] = grouped[column].transform(normalize_rank)
+    return df
+column1 = ['AMT_INCOME_TOTAL']
+column2 = [ 'AMT_CREDIT']
+column3 = ['AMT_ANNUITY']
+column4 = ['DAYS_BIRTH']
+df = calculate_normalized_rank(df, column1)
+df = calculate_normalized_rank(df, column2)
+df = calculate_normalized_rank(df, column3)
+df = calculate_normalized_rank(df, column4)
+#df['rank_[\'AMT_INCOME_TOTAL\']'] = df['rank_[\'AMT_INCOME_TOTAL\']'].fillna(0.5)
+#df['rank_[\'AMT_CREDIT\']'] = df['rank_[\'AMT_CREDIT\']'].fillna(0.5)
+#df['rank_[\'AMT_ANNUITY\']'] = df['rank_[\'AMT_ANNUITY\']'].fillna(0.5)
+#df['rank_[\'DAYS_BIRTH\']'] = df['rank_[\'DAYS_BIRTH\']'].fillna(0.5)
+
+#ABOUT FAMILY NUMBER
+df['CNT_ADULT_FAM_MEMBER'] = df['CNT_FAM_MEMBERS'] - df['CNT_CHILDREN']
+df['CNT_ADULT_FAM_MEMBER_PERCENT'] = df['CNT_ADULT_FAM_MEMBER'] / df['CNT_FAM_MEMBERS']
+df['RATIO_CHILDREN_IN_FAM'] = df['CNT_CHILDREN'] / df['CNT_FAM_MEMBERS']
+df['has_children'] = (df['CNT_CHILDREN'] > 0).astype(int)
+
+#Whether they have jobs or not, how long?
+df['has_job'] = (df['DAYS_EMPLOYED']>0).astype(int)
+df['LONG_EMPLOYMENT'] = (df['DAYS_EMPLOYED'] < -1700).astype(int)
+df['RETIREMENT_AGE'] = (df['DAYS_EMPLOYED'] < -14000).astype(int)
+
+#About Time
+def create_day_to_year(df, ls_cols, newcols):
+  df[newcols] = round(np.abs(df[ls_cols[0]])/365)
+  return df
+create_day_to_year(df, ['DAYS_BIRTH'], 'AGE')
+create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
+create_day_to_year(df,['DAYS_EMPLOYED'],'YEARS_EMPLOYED')
+create_day_to_year(df, ['DAYS_ID_PUBLISH'], 'YEARS_ID_PUBLISH')
+create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
+create_day_to_year(df, ['DAYS_LAST_PHONE_CHANGE'], 'YEARS_LAST_PHONE_CHANGE')
+#大小関係
+df['YEARS_EMPLOYED_GREATER_THAN_ID'] = (df['YEARS_EMPLOYED'] > df['YEARS_ID_PUBLISH']).astype(int)
+df['YEARS_EMPLOYED_GREATER_THAN_REGISTRATION'] = (df['YEARS_EMPLOYED'] > df['YEARS_REGISTRATION']).astype(int)
+df['YEARS_EMPLOYED_GREATER_THAN_PHONE'] = (df['YEARS_EMPLOYED'] > df['YEARS_LAST_PHONE_CHANGE']).astype(int)
+df['YEARS_PHONE_GREATER_THAN_ID'] = (df['YEARS_LAST_PHONE_CHANGE'] > df['YEARS_ID_PUBLISH']).astype(int)
+df['YEARS_PHONE_GREATER_THAN_REGISTRATION'] = (df['YEARS_LAST_PHONE_CHANGE'] > df['YEARS_REGISTRATION']).astype(int)
+df['YEARS_ID_GREATER_THAN_REGISTRATION'] = (df['YEARS_ID_PUBLISH'] > df['YEARS_REGISTRATION']).astype(int)
+#diff 6通り
+df['diff_YEARS_EMPLOYED_ID'] = df['YEARS_EMPLOYED'] - df['YEARS_ID_PUBLISH']
+df['diff_YEARS_EMPLOYED_REGISTRATION'] = df['YEARS_EMPLOYED'] - df['YEARS_REGISTRATION']
+df['diff_YEARS_EMPLOYED_PHONE'] = df['YEARS_EMPLOYED'] - df['YEARS_ID_PUBLISH']
+df['diff_YEARS_PHONE_ID'] = df['YEARS_LAST_PHONE_CHANGE'] - df['YEARS_ID_PUBLISH']
+df['diff_YEARS_PHONE_REGISTRATION'] = df['YEARS_LAST_PHONE_CHANGE'] - df['YEARS_REGISTRATION']
+df['diff_YEARS_ID_REGISTRATION'] = df['YEARS_ID_PUBLISH'] - df['YEARS_REGISTRATION']
+
+#div 9通り
+df['CAR_TO_BIRTH_RATIO'] = df['OWN_CAR_AGE']/df['YEARS_BIRTH']
+df['CAR_TO_EMPLOY_RATIO'] = df['OWN_CAR_AGE']/(df['YEARS_EMPLOYED'] - 0.1)
+df['CAR_TO_EMPLOY_RATIO'] = df['OWN_CAR_AGE']/(df['YEARS_BIRTH'] - 0.1)
+df['CAR_TO_EMPLOY_RATIO'] = df['OWN_CAR_AGE']/(df['YEARS_REGISTRATION'] - 0.1)
+df['CAR_TO_EMPLOY_RATIO'] = df['OWN_CAR_AGE']/(df['YEARS_ID_PUBLISH'] - 0.1)
+df['CAR_TO_EMPLOY_RATIO'] = df['OWN_CAR_AGE']/(df['YEARS_LAST_PHONE_CHANGE'] - 0.1)
+df["EMPLOY_BIRTH_RATIO"] = df['YEARS_EMPLOYED']/df['YEARS_BIRTH']
+df["EMPLOY_PHONE_RATIO"] = df['YEARS_EMPLOYED']/(df['YEARS_LAST_PHONE_CHANGE']-0.1)
+df["EMPLOY_ID_RATIO"] = df['YEARS_EMPLOYED']/(df['YEARS_ID_PUBLISH']-0.1)
+df["EMPLOY_REGISTRATION_RATIO"] = df['YEARS_EMPLOYED']/(df['YEARS_REGISTRATION']-0.1)
+df["PHONE_ID_RATIO"] = df['YEARS_LAST_PHONE_CHANGE']/(df['YEARS_ID_PUBLISH']-0.1)
+df["PHONE_REGISTRATION_RATIO"] = df['YEARS_LAST_PHONE_CHANGE']/(df['YEARS_REGISTRATION']-0.1)
+df["PHONE_BIRTH_RATIO"] = df['YEARS_LAST_PHONE_CHANGE']/df['YEARS_BIRTH']
+df["ID_REGISTRATION_RATIO"] = df['YEARS_ID_PUBLISH']/(df['YEARS_REGISTRATION']-0.1)
+df["REGISTRATION_BIRTH_RATIO"] = df['YEARS_REGISTRATION']/df['YEARS_BIRTH']
+df["ID_BIRTH_RATIO"] = df['YEARS_ID_PUBLISH']/df['YEARS_BIRTH']
+
+#EDUCATION_mapを作成
+education_mapping = {
+    'Lower secondary': 1,
+    'Secondary / secondary special': 3,
+    'Incomplete higher': 9,
+    'Higher education': 27,
+    'Academic degree': 81}
+df['NAME_EDUCATION_TYPE_map'] = df['NAME_EDUCATION_TYPE'].map(education_mapping)
+
+#As for money
+df.loc[(df.AMT_INCOME_TOTAL < 30000), 'INCOME_BAND'] = 1
+df.loc[(df.AMT_INCOME_TOTAL >= 30000)&(df.AMT_INCOME_TOTAL<65000), 'INCOME_BAND'] = 2
+df.loc[(df.AMT_INCOME_TOTAL >= 65000)&(df.AMT_INCOME_TOTAL<95000), 'INCOME_BAND'] = 3
+df.loc[(df.AMT_INCOME_TOTAL >= 95000)&(df.AMT_INCOME_TOTAL<130000), 'INCOME_BAND'] = 4
+df.loc[(df.AMT_INCOME_TOTAL >= 130000)&(df.AMT_INCOME_TOTAL<160000), 'INCOME_BAND'] = 5
+df.loc[(df.AMT_INCOME_TOTAL >= 160000)&(df.AMT_INCOME_TOTAL<190000), 'INCOME_BAND'] = 6
+df.loc[(df.AMT_INCOME_TOTAL >= 190000)&(df.AMT_INCOME_TOTAL<275000), 'INCOME_BAND'] = 7
+df.loc[(df.AMT_INCOME_TOTAL >= 275000)&(df.AMT_INCOME_TOTAL<325000), 'INCOME_BAND'] = 8
+df.loc[(df.AMT_INCOME_TOTAL >= 325000), 'INCOME_BAND'] = 9
+
+#diff 6通り+2
+df['CREDIT_DOWNPAYMENT'] = df['AMT_GOODS_PRICE'] - df['AMT_CREDIT']
+df['DIFF_GOODS_ANNUITY'] = df['AMT_GOODS_PRICE'] - df['AMT_ANNUITY']
+df['DIFF_INCOME_GOODS'] = df['AMT_INCOME_TOTAL'] - df['AMT_GOODS_PRICE']
+df['DIFF_INCOME_ANNUITY'] = df['AMT_INCOME_TOTAL'] - df['AMT_ANNUITY']
+df['DIFF_CREDIT_ANNUITY'] = df['AMT_CREDIT'] - df['AMT_ANNUITY']
+df['DIFF_CREDIT_INCOME'] = df['AMT_INCOME_TOTAL'] - df['AMT_CREDIT']
+df['DIFF_INCOME12_ANNUITY'] = df['AMT_INCOME_TOTAL']/12 - df['AMT_ANNUITY']
+
+#div 6通り
+df['CREDIT_GOODS_PRICE_RATIO'] = df['AMT_CREDIT'] / (1 + df['AMT_GOODS_PRICE'])
+df['ANNUITY_INCOME_RATIO'] = df["AMT_ANNUITY"]/(1 + df['AMT_INCOME_TOTAL'])
+df['CREFIT_ANNUITY_RATIO'] = df['AMT_CREDIT'] / (1 + df['AMT_ANNUITY'])
+df['CREDIT_INCOME_RATIO'] = df['AMT_CREDIT'] / (1 + df['AMT_INCOME_TOTAL'])
+df['TIME_TO_TAKE']=[df['AMT_GOODS_PRICE']/(1 + df['AMT_ANNUITY'])]
+df['EMPLOYED_TIME_TO_TAKE'] = (df['YEARS_EMPLOYED'] > df['TIME_TO_TAKE']).astype(int)
+df['INCOME_GOODS_PRICE_RATIO']=df['AMT_GOODS_PRICE']/(1 + df['AMT_INCOME_TOTAL'])
+
+#複合
+df["RATIO_GOODS_DIFF_INCOME_ANNUITY"] = df["AMT_GOODS_PRICE"] / (df["AMT_INCOME_TOTAL"] - df["AMT_ANNUITY"])
+df["RATIO_INCOME_DIFF_CREDIT_GOODS"] = df["AMT_INCOME_TOTAL"] / (df["AMT_CREDIT"] - df["AMT_GOODS_PRICE"])
+df["RATIO_ANNUITY_DIFF_CREDIT_GOODS"] = df["AMT_ANNUITY'] / (df["AMT_CREDIT"] - df["AMT_GOODS_PRICE"])
+
+df['RATIO_DIFF_CREDIT_GOODS_GOODS']=(df['AMT_CREDIT']-df['AMT_GOODS_PRICE'])/(df['AMT_GOODS_PRICE']+1)
+df['RATIO_DIFF_CREDIT_GOODS_CREDIT']=(df['AMT_CREDIT']-df['AMT_GOODS_PRICE'])/(df['AMT_CREDIT']+1)
+df['RATIO_DIFF_CREDIT_GOODS_ANNUITY']=(df['AMT_CREDIT']-df['AMT_GOODS_PRICE'])/(df['AMT_ANNUITY']+1)
+
+
+#label REGION
+from sklearn.preprocessing import LabelEncoder
+df_sorted = df.sort_values('REGION_POPULATION_RELATIVE')
+le = LabelEncoder()
+df_sorted['REGION_POPULATION_RELATIVE_encoded'] = le.fit_transform(df_sorted['REGION_POPULATION_RELATIVE'])
+df = df_sorted.sort_values('SK_ID_CURR')
+df = pd.get_dummies(df, columns=['REGION_POPULATION_RELATIVE_encoded'], prefix='REGION_POPULATION_RELATIVE')
+df['SUM_REGION'] = df['REG_REGION_NOT_LIVE_REGION'] + df['REG_REGION_NOT_WORK_REGION'] + df['LIVE_REGION_NOT_WORK_REGION']
+df['SUM_CITY'] = df['REG_CITY_NOT_LIVE_CITY'] + df['REG_CITY_NOT_WORK_CITY'] + df['LIVE_CITY_NOT_WORK_CITY']
+
+# As for BUREAU,OBS,DEF
+df['TOTAL_ENQUIRIES_CREDIT_BUREAU'] = df[['AMT_REQ_CREDIT_BUREAU_HOUR',
+                                          'AMT_REQ_CREDIT_BUREAU_MON',
+                                          'AMT_REQ_CREDIT_BUREAU_QRT',
+                                          'AMT_REQ_CREDIT_BUREAU_YEAR']].sum(axis=1)
+def calculate_ratios(df):
+    total_enquiries = df['TOTAL_ENQUIRIES_CREDIT_BUREAU'].values
+    hour_enquiries = df['AMT_REQ_CREDIT_BUREAU_HOUR']
+    mon_enquiries =  df['AMT_REQ_CREDIT_BUREAU_MON']
+    qrt_enquiries = df['AMT_REQ_CREDIT_BUREAU_QRT']
+    year_enquiries = df['AMT_REQ_CREDIT_BUREAU_YEAR']
+    df['RATIO_HOUR_TOTAL'] = np.where(total_enquiries != 0, hour_enquiries / total_enquiries, 0)
+    df['RATIO_MOND_TOTAL'] = np.where(total_enquiries != 0, mon_enquiries / total_enquiries, 0)
+    df['RATIO_QRT_TOTAL'] = np.where(total_enquiries != 0, qrt_enquiries / total_enquiries, 0)
+    df['RATIO_YEAR_TOTAL'] = np.where(total_enquiries != 0, year_enquiries / total_enquiries, 0)
+    return df
+df = calculate_ratios(df)
+df['OBS_CNT_SOCIAL_CIRCLE_WEIGHTED_SUM'] = (df['OBS_60_CNT_SOCIAL_CIRCLE']) + (9 * df['OBS_30_CNT_SOCIAL_CIRCLE'])
+df['DEF_CNT_SOCIAL_CIRCLE_WEIGHTED_SUM'] = (df['DEF_60_CNT_SOCIAL_CIRCLE']) + (9 * df['DEF_30_CNT_SOCIAL_CIRCLE'])
+df['DIFF_OBS_DEF_SOCIAL_CIRCLE_WEIGHTED_SUM'] = df['OBS_30_CNT_SOCIAL_CIRCLE'] - df['OBS_60_CNT_SOCIAL_CIRCLE']
+df['DIFF_OBS_DEF_SOCIAL_CIRCLE_WEIGHTED_SUM'] = df['DEF_30_CNT_SOCIAL_CIRCLE'] - df['DEF_60_CNT_SOCIAL_CIRCLE']
+df['AMT_REQ_CREDIT_BUREAU_WEIGHTED_SUM'] = (25 * df['AMT_REQ_CREDIT_BUREAU_HOUR']) + (12.5 * df['AMT_REQ_CREDIT_BUREAU_MON'])
++ (10 * df['AMT_REQ_CREDIT_BUREAU_QRT']) +  (5 * df['AMT_REQ_CREDIT_BUREAU_YEAR'])
+
+# As for intersections of two features
+df['RATIO_AMT_ANNUITY_TO_DAYS_EMPLOYED'] = df['AMT_ANNUITY'] / (df['YEARS_EMPLOYED']-0.1)
+df['RATIO_AMT_GOODS_PRICE_TO_DAYS_EMPLOYED'] = df['AMT_GOODS_PRICE'] / (df['YEARS_EMPLOYED']-0.1)
+
+df['RATIO_CREDIT_CNT_FAM_MEMBERS'] = df['AMT_CREDIT'] / df['CNT_FAM_MEMBERS']
+df['RATIO_INCOME_CNT_FAM_MEMBERS'] = df['AMT_INCOME_TOTAL'] / df['CNT_FAM_MEMBERS']
+df['RATIO_ANNUITY_CNT_CHILDREN'] = df['AMT_ANNUITY'] / (0.01 + df['CNT_CHILDREN'])
+df['RATIO_GOODS_PRICE_CNT_CHILDREN'] = df['AMT_GOODS_PRICE'] / (0.01 + df['CNT_CHILDREN'])
+df['RATIO_CREDIT_CNT_CHILDREN'] = df['AMT_CREDIT'] / (0.01 + df['CNT_CHILDREN'])
+df["INCOME_PER_CHILD"] = df["AMT_INCOME_TOTAL"] / (df["CNT_CHILDREN"] + 0.01)
+df['RATIO_ANNUITY_CNT_ADULT_FAM_MEMBER'] = df['AMT_ANNUITY'] / df['CNT_ADULT_FAM_MEMBER']
+df['RATIO_CREDIT_CNT_ADULT_FAM_MEMBER'] = df['AMT_CREDIT'] / df['CNT_ADULT_FAM_MEMBER']
+df['RATIO_INCOME_TOTAL_ADULT_FAM_MEMBER'] = df['AMT_INCOME_TOTAL'] / df['CNT_ADULT_FAM_MEMBER']
+
+df[RATIO_EMPLOY_CNE_CHILDREN'] = df['YEARS_EMPLOYED'] / (0.01 + df['CNT_CHILDREN'])
+
+
