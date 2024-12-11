@@ -1,0 +1,21 @@
+# As for OCCUPATION_TYPE by K近傍法 
+from sklearn.impute import KNNImputer
+
+# KNN Imputerで欠損値を補完
+imputer = KNNImputer(n_neighbors=40)#最適な物を選ぶ必要性！！
+
+# 使用する特徴量を選択
+features_for_knn = ['EXT_SOURCE_1','EXT_SOURCE_2','EXT_SOURCE_3','AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'YEARS_EMPLOYED','NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE']
+df_knn = df[features_for_knn + ['OCCUPATION_TYPE']].copy()
+
+from sklearn.preprocessing import LabelEncoder
+for col in ['OCCUPATION_TYPE', 'NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE']:
+  le = LabelEncoder()
+  df_knn[col] = le.fit_transform(df_knn[col].astype(str))
+
+# KNN Imputerを実行
+df_knn_imputed = imputer.fit_transform(df_knn)
+
+# 結果を元のDataFrameに反映
+df_knn_imputed = pd.DataFrame(df_knn_imputed, columns=features_for_knn + ['OCCUPATION_TYPE'])
+df['OCCUPATION_TYPE'] = df_knn_imputed['OCCUPATION_TYPE']
