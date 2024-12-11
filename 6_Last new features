@@ -5,7 +5,7 @@ df_fixed = pd.concat([application_train, application_test])
 df = pd.merge(df, df_fixed[['SK_ID_CURR', 'CODE_GENDER', 'ORGANIZATION_TYPE']], on='SK_ID_CURR', how='left')
 
 df['ORGANIZATION_TYPE'] = df['ORGANIZATION_TYPE'].replace('XNA', np.nan)
-df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE_Pensioner'] == 1), 'ORGANIZATION_TYPE'] = 'NOT_WORK'
+df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE_Pensioner'] == 1), 'ORGANIZATION_TYPE'] = 'PENSIONER'
 df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE_Unemployed'] == 1), 'ORGANIZATION_TYPE'] = 'NO_WORK'
 def fix_code_gender(df):
     # Kindergarden, Medicine の場合女性
