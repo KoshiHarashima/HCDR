@@ -23,8 +23,8 @@ df['NaN_count'] = df.drop(drop_column, axis=1).isnull().sum(axis=1)  + df['NON_S
 
 # Fill NaN values in a most frequent and reasonable way
 #As for NAME_TYPE_SUITE
-df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin['Married','Civil marriage'],'NAME_TYPE_SUITE'] = 'Spouse, partner'
-df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin['Single / not married','Separated','Widow'), 'NAME_TYPE_SUITE'] = 'Unaccompanied'
+df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Married','Civil marriage'])),'NAME_TYPE_SUITE']= 'Spouse, partner' 
+df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Single / not married','Separated','Widow'])), 'NAME_TYPE_SUITE'] = 'Unaccompanied'
 
 #As for OCCUPATION_TYPE
 df.loc[(df['OCCUPATION_TYPE'].isna()) & (df['NAME_INCOME_TYPE'] == 'State servant'), 'OCCUPATION_TYPE'] = 'STATE'
@@ -36,12 +36,15 @@ df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Student
 df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Pensioner'])), 'ORGANIZATION_TYPE'] = 'PENSIONER'
 df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Unemployed'])), 'ORGANIZATION_TYPE'] = 'NO_WORK'
 
-#As for DAYS_EMPLOYEDとYEARS_EMPLOYED
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'YEARS_EMPLOYED'] = - df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'AGE'] + 20
-df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'YEARS_EMPLOYED'] = 0
-df['YEARS_EMPLOYED_PERCENT'] = df['YEARS_EMPLOYED'] / (df['AGE'] - 20)
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] = 0
-df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 0
+#As for AMT_BUREAU, OBS, and DEF
+df['AMT_REQ_CREDIT_BUREAU_HOUR'] = df['AMT_REQ_CREDIT_BUREAU_HOUR'].fillna(0)
+df['AMT_REQ_CREDIT_BUREAU_MON'] = df['AMT_REQ_CREDIT_BUREAU_MON'].fillna(0)
+df['AMT_REQ_CREDIT_BUREAU_QRT'] = df['AMT_REQ_CREDIT_BUREAU_QRT'].fillna(0)
+df['AMT_REQ_CREDIT_BUREAU_YEAR'] = df['AMT_REQ_CREDIT_BUREAU_YEAR'].fillna(0)
+df['OBS_30_CNT_SOCIAL_CIRCLE'] = df['OBS_30_CNT_SOCIAL_CIRCLE'].fillna(0)
+df['DEF_30_CNT_SOCIAL_CIRCLE'] = df['DEF_30_CNT_SOCIAL_CIRCLE'].fillna(0)
+df['OBS_60_CNT_SOCIAL_CIRCLE'] = df['OBS_60_CNT_SOCIAL_CIRCLE'].fillna(0)
+df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)        
 
 #As for AMT_ANNUITY(!!)
 df['AMT_ANNUITY'] = df['AMT_ANNUITY'] .fillna(df['AMT_ANNUITY'].median())
@@ -62,12 +65,4 @@ df['OWN_CAR_AGE'] = df['OWN_CAR_AGE'].fillna(0)
 df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['House / apartment', 'Co-op apartment', 'Office apartment'])),'FLAG_OWN_REALTY'] = 'Y'
 df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['Municipal apartment', 'Rented apartment', 'With parents'])),'FLAG_OWN_REALTY'] = 'N'  
 
-#As for AMT_BUREAU, OBS, and DEF
-df['AMT_REQ_CREDIT_BUREAU_HOUR'] = df['AMT_REQ_CREDIT_BUREAU_HOUR'].fillna(0)
-df['AMT_REQ_CREDIT_BUREAU_MON'] = df['AMT_REQ_CREDIT_BUREAU_MON'].fillna(0)
-df['AMT_REQ_CREDIT_BUREAU_QRT'] = df['AMT_REQ_CREDIT_BUREAU_QRT'].fillna(0)
-df['AMT_REQ_CREDIT_BUREAU_YEAR'] = df['AMT_REQ_CREDIT_BUREAU_YEAR'].fillna(0)
-df['OBS_30_CNT_SOCIAL_CIRCLE'] = df['OBS_30_CNT_SOCIAL_CIRCLE'].fillna(0)
-df['DEF_30_CNT_SOCIAL_CIRCLE'] = df['DEF_30_CNT_SOCIAL_CIRCLE'].fillna(0)
-df['OBS_60_CNT_SOCIAL_CIRCLE'] = df['OBS_60_CNT_SOCIAL_CIRCLE'].fillna(0)
-df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)                                              
+                                      
