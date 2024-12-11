@@ -1,0 +1,93 @@
+application_train = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/train (1).csv')
+application_test = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/test (1).csv')
+df_fixed = pd.concat([application_train, application_test])
+
+df = pd.merge(df, df_fixed[['SK_ID_CURR', 'CODE_GENDER', 'ORGANIZATION_TYPE']], on='SK_ID_CURR', how='left')
+
+df['ORGANIZATION_TYPE'] = df['ORGANIZATION_TYPE'].replace('XNA', np.nan)
+df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE_Pensioner'] == 1), 'ORGANIZATION_TYPE'] = 'NOT_WORK'
+df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE_Unemployed'] == 1), 'ORGANIZATION_TYPE'] = 'NO_WORK'
+def fix_code_gender(df):
+    # Kindergarden, Medicine の場合女性
+    df.loc[(df['CODE_GENDER'] == 'XNA') &
+           (df['ORGANIZATION_TYPE'].isin(['Kindergarten', 'Medicine'])), 'CODE_GENDER'] = 'F'
+    # Industry: type 3、Business Entity Type 1 の場合男性
+    df.loc[(df['CODE_GENDER'] == 'XNA') &
+           (df['ORGANIZATION_TYPE'].isin(['Industry: type 3', 'Business Entity Type 1'])), 'CODE_GENDER'] = 'M'
+    return df
+df = fix_code_gender(df)
+
+
+import tqdm as tqdm
+AGGREGATION_RECIPIES = [
+    (['CODE_GENDER', 'NAME_EDUCATION_TYPE'], [('AMT_ANNUITY', 'max'),
+                                              ('AMT_CREDIT', 'max'),
+                                              ('EXT_SOURCE_1', 'mean'),
+                                              ('EXT_SOURCE_2', 'mean'),
+                                              ('OWN_CAR_AGE', 'max'),
+                                              ('OWN_CAR_AGE', 'sum')]),
+    (['CODE_GENDER', 'REG_CITY_NOT_WORK_CITY'], [('AMT_ANNUITY', 'mean'),
+                                                 ('CNT_CHILDREN', 'mean'),
+                                                 ('DAYS_ID_PUBLISH', 'mean')]),
+    (['CODE_GENDER', 'NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE', 'REG_CITY_NOT_WORK_CITY'], [('EXT_SOURCE_1', 'mean'),
+                                                                                           ('EXT_SOURCE_2', 'mean')]),
+    (['NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE'], [('AMT_CREDIT', 'mean'),
+                                                  ('AMT_REQ_CREDIT_BUREAU_YEAR', 'mean'),
+                                                  ('EXT_SOURCE_1', 'mean'),
+                                                  ('EXT_SOURCE_2', 'mean'),
+                                                  ('EXT_SOURCE_3', 'mean'),
+                                                  ('OWN_CAR_AGE', 'mean')]),
+    (['NAME_EDUCATION_TYPE', 'OCCUPATION_TYPE'], [('AMT_CREDIT', 'mean'),
+                                                  ('AMT_REQ_CREDIT_BUREAU_YEAR', 'mean'),
+                                                  ('EXT_SOURCE_1', 'mean'),
+                                                  ('EXT_SOURCE_2', 'mean'),
+                                                  ('EXT_SOURCE_3', 'mean'),
+                                                  ('OWN_CAR_AGE', 'mean')]),
+    (['CODE_GENDER_F', 'OCCUPATION_TYPE'], [('AMT_CREDIT', 'mean'),
+                                                  ('AMT_REQ_CREDIT_BUREAU_YEAR', 'mean'),
+                                                  ('EXT_SOURCE_1', 'mean'),
+                                                  ('EXT_SOURCE_2', 'mean'),
+                                                  ('EXT_SOURCE_3', 'mean'),
+                                                  ('OWN_CAR_AGE', 'mean')]),
+    (['CODE_GENDER_M', 'OCCUPATION_TYPE'], [('AMT_CREDIT', 'mean'),
+                                                  ('AMT_REQ_CREDIT_BUREAU_YEAR', 'mean'),
+                                                  ('EXT_SOURCE_1', 'mean'),
+                                                  ('EXT_SOURCE_2', 'mean'),
+                                                  ('EXT_SOURCE_3', 'mean'),
+                                                  ('OWN_CAR_AGE', 'mean')]),
+    (['NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE', 'REG_CITY_NOT_WORK_CITY'], [('EXT_SOURCE_1', 'mean')]),
+    (['ORGANIZATION_TYPE'], [('AMT_ANNUITY', 'mean'),
+                           ('CNT_CHILDREN', 'mean'),
+                           ('CNT_FAM_MEMBERS', 'mean'),
+                           ('DAYS_BIRTH', 'mean'),
+                           ('DAYS_EMPLOYED', 'mean'),
+                           ('DAYS_ID_PUBLISH', 'mean'),
+                           ('DAYS_REGISTRATION', 'mean'),
+                           ('EXT_SOURCE_1', 'mean'),
+                           ('EXT_SOURCE_2', 'mean'),
+                           ('EXT_SOURCE_3', 'mean')]),
+    (['OCCUPATION_TYPE'], [('AMT_ANNUITY', 'mean'),
+                           ('CNT_CHILDREN', 'mean'),
+                           ('CNT_FAM_MEMBERS', 'mean'),
+                           ('DAYS_BIRTH', 'mean'),
+                           ('DAYS_EMPLOYED', 'mean'),
+                           ('DAYS_ID_PUBLISH', 'mean'),
+                           ('DAYS_REGISTRATION', 'mean'),
+                           ('EXT_SOURCE_1', 'mean'),
+                           ('EXT_SOURCE_2', 'mean'),
+                           ('EXT_SOURCE_3', 'mean')])
+]
+groupby_aggregate_names = []
+for groupby_cols, specs in tqdm.tqdm(AGGREGATION_RECIPIES):
+    group_object = df.groupby(groupby_cols)
+    for select, agg in tqdm.tqdm(specs):
+        groupby_aggregate_name = '{}_{}_{}'.format('_'.join(groupby_cols), agg, select)
+        df = df.merge(group_object[select]
+                              .agg(agg)
+                              .reset_index()
+                              .rename(index=str,
+                                      columns={select: groupby_aggregate_name})
+                              [groupby_cols + [groupby_aggregate_name]],
+                              on=groupby_cols,
+                              how='left')
+        groupby_aggregate_names.append(groupby_aggregate_name)
