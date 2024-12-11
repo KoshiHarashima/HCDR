@@ -1,0 +1,126 @@
+from sklearn.neighbors import NearestNeighbors
+
+# Combine feature_matrix and application_test
+df = pd.concat([feature_matrix, application_test], axis=0)
+
+# Define features for neighborhood calculation
+features = ['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3', 'CREFIT_ANNUITY_RATIO']
+
+# Fill NaN values with mean for neighborhood calculation
+df[features] = df[features].fillna(df[features].mean())
+
+
+# Initialize NearestNeighbors model with 500 neighbors
+knn = NearestNeighbors(n_neighbors=500, metric='euclidean')
+
+# Fit model on selected features
+knn.fit(df[features])
+
+# Get indices and distances of the 500 nearest neighbors
+distances, indices = knn.kneighbors(df[features])
+
+# Create the 'neighbors_target_mean_500' column
+neighbors_target_mean = []
+for i in range(len(df)):
+    neighbor_indices = indices[i]
+    neighbor_targets = df.iloc[neighbor_indices]['TARGET'].values
+    mean_target = np.nanmean(neighbor_targets)  # Handle potential NaN values in TARGET
+    neighbors_target_mean.append(mean_target)
+
+df['neighbors_target_mean_500'] = neighbors_target_mean
+
+from sklearn.neighbors import NearestNeighbors
+X_train['neighbors_target_mean_500'] = df['neighbors_target_mean_500'][:len(X_train)]
+X_test['neighbors_target_mean_500'] = df['neighbors_target_mean_500'][len(X_train):]
+
+#it depends on what features to be selected
+cols_to_drop = ['FLAG_WORK_PHONE', 'REGION_RATING_CLIENT', 'REG_CITY_NOT_LIVE_CITY', 'REG_CITY_NOT_WORK_CITY',
+                'DEF_30_CNT_SOCIAL_CIRCLE', 'rank_DAYS_BIRTH', 'YEARS_EMPLOYED_PERCENT', 'CNT_ADULT_FAM_MEMBER',
+                'ATIO_AMT_ANNUITY_TO_CNT_ADULT_FAM_MEMBER', 'RATIO_AMT_INCOME_TOTAL_TO_AMT_ANNUITY', 'CAR_TO_EMPLOY_RATIO',
+                'REGION_POPULATION_RELATIVE_7', 'REGION_POPULATION_RELATIVE_15', 'REGION_POPULATION_RELATIVE_24',
+                'REGION_POPULATION_RELATIVE_27', 'REGION_POPULATION_RELATIVE_60', 'REGION_POPULATION_RELATIVE_68',
+                'REGION_POPULATION_RELATIVE_75', 'DIFF_OBS_DEF_SOCIAL_CIRCLE_WEIGHTED_SUM', 'FLAG_OWN_CAR_N',
+                'NAME_INCOME_TYPE_Working', 'NAME_FAMILY_STATUS_Married', 'NAME_FAMILY_STATUS_Separated',
+                'ORGANIZATION_TYPE_Construction', 'ORGANIZATION_TYPE_Industrytype3', 'ORGANIZATION_TYPE_Selfemployed',
+                'ORGANIZATION_TYPE_Transporttype3', 'EXT_SOURCES_PROD', 'EXT_SOURCES_STD',
+                'CODE_GENDER_NAME_EDUCATION_TYPE_max_AMT_ANNUITY', 'CODE_GENDER_NAME_EDUCATION_TYPE_sum_OWN_CAR_AGE',
+                'CODE_GENDER_NAME_EDUCATION_TYPE_ORGANIZATION_TYPE_REG_CITY_NOT_WORK_CITY_mean_EXT_SOURCE_1',
+                'CODE_GENDER_NAME_EDUCATION_TYPE_ORGANIZATION_TYPE_REG_CITY_NOT_WORK_CITY_mean_EXT_SOURCE_2',
+                'NAME_EDUCATION_TYPE_ORGANIZATION_TYPE_mean_AMT_REQ_CREDIT_BUREAU_YEAR',
+                'NAME_EDUCATION_TYPE_OCCUPATION_TYPE_mean_AMT_REQ_CREDIT_BUREAU_YEAR',
+                'NAME_EDUCATION_TYPE_OCCUPATION_TYPE_mean_EXT_SOURCE_1', 'NAME_EDUCATION_TYPE_OCCUPATION_TYPE_mean_OWN_CAR_AGE',
+                'CODE_GENDER_F_OCCUPATION_TYPE_mean_AMT_CREDIT', 'CUM_MEAN(TRUSTFUL)', 'CUM_SUM(AGE)','DAYS_BIRTH', 'DAYS_EMPLOYED','OWN_CAR_AGE',
+                'AMT_ANNUITY', 'CREDIT_DOWNPAYMENT','CREDIT_GOODS_PRICE_RATIO',	'CREFIT_ANNUITY_RATIO',	'RATIO_AMT_ANNUITY_TO_CNT_ADULT_FAM_MEMBER',
+                'EXT_SOURCE_1',	'EXT_SOURCE_2', 'EXT_SOURCE_3','NAME_EDUCATION_TYPE','CODE_GENDER_F','NAME_CONTRACT_TYPE_Cashloans','neighbors_target_mean_500',
+                'NOT_SUBMITTED_BUREAU']
+
+X_train = X_train.drop(columns=cols_to_drop, errors='ignore')
+
+#最後の調整
+import lightgbm as lgb # Import the lightgbm module and alias it as lgb
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+# ハイパーパラメータの探索空間
+space =space ={
+    'boosting_type': hp.choice('boosting_type', ['gbdt', 'goss']),  # Changed to a list of strings
+    'num_leaves': hp.choice('num_leaves', [31,63, 127, 255]),
+    'learning_rate': hp.loguniform('learning_rate', np.log(0.01), np.log(0.5)),
+    'subsample_for_bin': hp.quniform('subsample_for_bin', 20000, 300000, 20000),
+    'min_child_samples': hp.quniform('min_child_samples', 20, 500, 5),
+    'reg_alpha': hp.uniform('reg_alpha', 0.0, 1.0),
+    'reg_lambda': hp.uniform('reg_lambda', 0.0, 1.0),
+    'colsample_bytree': hp.uniform('colsample_by_tree', 0.6, 1.0),
+    'is_unbalance': True,
+    'subsample': hp.uniform('subsample', 0.5, 1) # Added subsample parameter
+}
+
+# 目的関数
+def objective(params):
+    global ITERATION
+    ITERATION = 0
+    ITERATION += 1
+    params['min_child_samples'] = int(params['min_child_samples'])
+    params['subsample_for_bin'] = int(params['subsample_for_bin'])
+    params['min_child_samples'] = int(params['min_child_samples'])
+    model = lgb.LGBMClassifier(**params)
+    model.early_stopping = True
+    model.batch_size = 128
+    # クロスバリデーションによる評価
+    scores = cross_val_score(model, X_train, y_train, scoring='roc_auc', cv=7)
+    mean_score = scores.mean()
+    print(f"Iteration: {ITERATION}, Mean AUC: {mean_score}")
+    return {'loss': -mean_score, 'status': STATUS_OK, 'params': params}
+
+# ベイズ最適化の実行
+trials = Trials()
+best = fmin(fn=objective,
+           space=space,
+           algo=tpe.suggest,
+           max_evals=30,
+           trials=trials)
+
+# 最適なパラメータ
+best_params = trials.best_trial['result']['params']
+print('Best parameters:', best_params)
+X_test = X_test.drop(columns=cols_to_drop, errors='ignore')
+
+# 最終的な予測モデルの学習
+params = {'boosting_type': 'goss',
+          'colsample_bytree': 0.981600486355177,
+          'is_unbalance': True,
+          'learning_rate': 0.01811482871616533,
+          'min_child_samples': 190,
+          'num_leaves': 31,
+          'reg_alpha': 0.1615344424620181,
+          'reg_lambda': 0.30096165963560473,
+          'subsample': 0.7422085638131579,
+          'subsample_for_bin': 300000}
+final_model = lgb.LGBMClassifier(**params)
+final_model.fit(X_train, y_train)
+preds = final_model.predict_proba(X_test)[:, 1]
+
+sub = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/sample_submission.csv')
+sub['TARGET'] = preds
+sub.to_csv('submission_home_1', index=False)
+sub = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/sample_submission.csv')
+sub['TARGET'] = preds  # Assuming 'preds' is defined in your existing code
+sub.to_csv('submission_home_1.csv', index=False) #added .csv
