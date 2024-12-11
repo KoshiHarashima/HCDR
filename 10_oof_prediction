@@ -49,3 +49,56 @@ oof_preds, test_preds = train_and_predict(X_train, y_train, X_test, models, para
 # 評価
 for i, model in enumerate(models):
     print(f"Model {i+1}: {roc_auc_score(y_train, oof_preds[:, i])}")
+
+
+
+
+
+oof_preds_RFC_df = pd.DataFrame(oof_preds_RFC, columns=['oof_preds_RFC'])
+oof_preds_LR_df = pd.DataFrame(oof_preds_LR, columns=['oof_preds_LR'])
+oof_preds_ETC_df = pd.DataFrame(oof_preds_ETC,columns=['oof_preds_ETC'] )
+oof_preds_LGBM_31_df = pd.DataFrame(oof_preds_LGBM_31,columns=['oof_preds_LGBM_31'])
+oof_preds_LGBM_57_df = pd.DataFrame(oof_preds_LGBM_57,columns=['oof_preds_LGBM_57'])
+oof_preds_LGBM_127_df = pd.DataFrame(oof_preds_LGBM_127,columns=['oof_preds_LGBM_127'])
+oof_preds_LGBM_255_df = pd.DataFrame(oof_preds_LGBM_255,columns=['oof_preds_LGBM_255'])
+oof_preds_MLP_s_df = pd.DataFrame(oof_preds_MLP_s,columns=['oof_preds_MLP_s'])
+oof_preds_MLP_d_df = pd.DataFrame(oof_preds_MLP_d,columns=['oof_preds_MLP_d'])
+
+# Concatenate the DataFrames along columns (axis=1)
+X_train = pd.concat([X_train, oof_preds_RFC_df, oof_preds_LR_df,
+                     oof_preds_ETC_df,oof_preds_LGBM_31_df,oof_preds_LGBM_57_df,
+                     oof_preds_LGBM_127_df,oof_preds_LGBM_255_df,oof_preds_MLP_s_df,
+                     oof_preds_MLP_d_df], axis=1)
+
+test_preds_RFC_df = pd.DataFrame(test_preds_RFC,columns=['oof_preds_RFC'])
+test_preds_LR_df = pd.DataFrame(test_preds_LR,columns=['oof_preds_LR'])
+test_preds_ETC_df = pd.DataFrame(test_preds_ETC,columns=['oof_preds_ETC'])
+test_preds_LGBM_31_df = pd.DataFrame(test_preds_LGBM_31,columns=['oof_preds_LGBM_31'])
+test_preds_LGBM_57_df = pd.DataFrame(test_preds_LGBM_57,columns=['oof_preds_LGBM_57'])
+test_preds_LGBM_127_df = pd.DataFrame(test_preds_LGBM_127,columns=['oof_preds_LGBM_127'])
+test_preds_LGBM_255_df = pd.DataFrame(test_preds_LGBM_255,columns=['oof_preds_LGBM_255'])
+test_preds_MLP_s_df = pd.DataFrame(test_preds_MLP_s,columns=['oof_preds_MLP_s'])
+test_preds_MLP_d_df = pd.DataFrame(test_preds_MLP_d,columns=['oof_preds_MLP_d'])
+test_preds_RFC_df = test_preds_RFC_df.reset_index(drop=True)
+test_preds_RFC_df.index = range(171202, 171202 + len(test_preds_RFC_df))
+test_preds_LR_df = test_preds_LR_df.reset_index(drop=True)
+test_preds_LR_df.index = range(171202, 171202 + len(test_preds_LR_df))
+test_preds_ETC_df = test_preds_ETC_df.reset_index(drop=True)
+test_preds_ETC_df.index = range(171202, 171202 + len(test_preds_ETC_df))
+test_preds_LGBM_31_df = test_preds_LGBM_31_df.reset_index(drop=True)
+test_preds_LGBM_31_df.index = range(171202, 171202 + len(test_preds_LGBM_31_df))
+test_preds_LGBM_57_df = test_preds_LGBM_57_df.reset_index(drop=True)
+test_preds_LGBM_57_df.index = range(171202, 171202 + len(test_preds_LGBM_57_df))
+test_preds_LGBM_127_df = test_preds_LGBM_127_df.reset_index(drop=True)
+test_preds_LGBM_127_df.index = range(171202, 171202 + len(test_preds_LGBM_127_df))
+test_preds_LGBM_255_df = test_preds_LGBM_255_df.reset_index(drop=True)
+test_preds_LGBM_255_df.index = range(171202, 171202 + len(test_preds_LGBM_255_df))
+test_preds_MLP_s_df = test_preds_MLP_s_df.reset_index(drop=True)
+test_preds_MLP_s_df.index = range(171202, 171202 + len(test_preds_MLP_s_df))
+test_preds_MLP_d_df = test_preds_MLP_d_df.reset_index(drop=True)
+test_preds_MLP_d_df.index = range(171202, 171202 + len(test_preds_MLP_d_df))
+
+X_test = pd.concat([X_test, test_preds_RFC_df, test_preds_LR_df,
+                     test_preds_ETC_df, test_preds_LGBM_31_df, test_preds_LGBM_57_df,
+                     test_preds_LGBM_127_df, test_preds_LGBM_255_df, test_preds_MLP_s_df,
+                     test_preds_MLP_d_df], axis=1)
