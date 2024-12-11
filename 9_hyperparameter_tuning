@@ -1,0 +1,42 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from hyperopt import hp, tpe, fmin, Trials
+import optuna  # Optuna を利用する場合
+
+def objective(params, model_class, X, y, scoring='roc_auc', cv=5):
+    model = model_class(**params)
+    scores = cross_val_score(model, X, y, scoring=scoring, cv=cv)
+    return -scores.mean()
+
+def optimize(X, y, model_class, space, scoring='roc_auc', cv=5, max_evals=30, optimizer='tpe'):
+    if optimizer == 'tpe':
+        trials = Trials()
+        best = fmin(fn=lambda params: objective(params, model_class, X, y, scoring, cv),
+                   space=space,
+                   algo=tpe.suggest,
+                   max_evals=max_evals,
+                   trials=trials)
+    elif optimizer == 'optuna':
+        def objective_optuna(trial):
+            params = dict(trial.suggest_float('C', 1e-4, 1e4),
+                         # ... その他のパラメータ
+                         )
+            return objective(params, model_class, X, y, scoring, cv)
+        study = optuna.create_study(direction='minimize')
+        study.optimize(objective_optuna, n_trials=max_evals)
+        best = study.best_trial
+    return best.params
+
+# ハイパーパラメータの探索空間
+space = {
+    # ... (同様)
+}
+
+# LogisticRegression の場合
+best_params = optimize(X_train, y_train, LogisticRegression, space)
+
+# RandomForestClassifier の場合
+best_params = optimize(X_train, y_train, RandomForestClassifier, space)
