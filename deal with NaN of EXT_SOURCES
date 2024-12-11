@@ -1,0 +1,178 @@
+#Before As for EXT_SOURCES 
+df = pd.get_dummies(df)
+df= df.rename(columns = lambda x:re.sub('[^A-Za-z0-9_]+', '', x))
+# Remove duplicate columns
+df = df.loc[:,~df.columns.duplicated()]
+nan_columns = df.columns[df.isna().any()].tolist()
+
+# Bool型のカラムを出力
+bool_cols = df.select_dtypes(include=['bool']).columns
+print("Bool columns:")
+print(bool_cols)
+
+# object型のカラムを出力
+object_cols = df.select_dtypes(include=['object']).columns
+print("\nObject columns:")
+print(object_cols)
+
+# それ以外のdtypeのカラムを出力
+other_cols = df.select_dtypes(exclude=['bool', 'object']).columns
+print("\nOther columns:")
+other_cols
+
+def clip_outliers(df, columns=None):
+    if columns is None:
+        columns = df.select_dtypes(include=np.number).columns
+    for col in columns:
+        # 各カラムに対してクリッピング
+        mean = df[col].mean()
+        std = df[col].std()
+        lower_bound = mean - 2.5 * std
+        upper_bound = mean + 2.5 * std
+        df[col] = np.clip(df[col], lower_bound, upper_bound)
+    return df
+
+#外れ値をclipする
+feature = other_cols
+feature = feature.drop('TARGET')
+feature = feature.drop('SK_ID_CURR')
+df = clip_outliers(df,columns = feature)
+
+  
+#to check
+if nan_columns:
+  print("Columns with NaN values:")
+  print(nan_columns)
+else:
+  print("No columns with NaN values found in the DataFrame.")
+
+
+#As for EXT_SOURCES
+#select_feature
+from lightgbm import LGBMRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_squared_error
+
+def train_and_evaluate_model(df, target_column, features_to_drop, num_top_features=1, impute_strategy='mean'):
+    """
+    LightGBMモデルを訓練し、評価する関数
+
+    Args:
+        df: データフレーム
+        target_column: 目的変数のカラム名
+        features_to_drop: 除外する特徴量のカラム名のリスト
+        num_top_features: 選択する上位特徴量の数
+        impute_strategy: 欠損値補完の方法 (mean, median, most_frequentなど)
+
+    Returns:
+        None
+    """
+
+    # 特徴量と目的変数を抽出
+    X = df.drop(features_to_drop + [target_column], axis=1)
+    y = df[target_column]
+
+    # データを訓練データとテストデータに分割
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # 欠損値を補完
+    imputer = SimpleImputer(strategy=impute_strategy)
+    X_train_imputed = imputer.fit_transform(X_train)
+    X_test_imputed = imputer.transform(X_test)
+
+    # LightGBMモデルを訓練
+    model = LGBMRegressor(verbose=-1)
+    model.fit(X_train_imputed, y_train)
+
+    # 特徴量重要度を取得
+    feature_importances = pd.Series(model.feature_importances_, index=X.columns)
+    feature_importances = feature_importances.sort_values(ascending=False)
+
+    # 上位の特徴量を選択
+    selected_features = feature_importances.index[:num_top_features]
+
+    # 選択した特徴量のみで再訓練
+    X_train_selected = X_train_imputed[:, X.columns.get_loc(selected_features)]
+    X_test_selected = X_test_imputed[:, X.columns.get_loc(selected_features)]
+
+    model_selected = LGBMRegressor()
+    model_selected.fit(X_train_selected, y_train)
+
+    # モデルを評価
+    y_pred = model_selected.predict(X_test_selected)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    print(f"RMSE: {rmse:.4f}")
+
+# 使用例
+features_to_drop = ['SK_ID_CURR', 'EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']
+target_column = 'EXT_SOURCE_2'
+
+train_and_evaluate_model(df, target_column, features_to_drop, num_top_features=5, impute_strategy='median')
+
+#impute
+from sklearn.model_selection import StratifiedKFold
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_squared_error
+
+def train_and_evaluate_model_with_stratified_kfold(df, target_column, features_to_drop, num_folds=5, random_state=42, impute_strategy='mean'):
+    """
+    StratifiedKFoldを用いたLightGBMモデルの訓練と評価
+
+    Args:
+        df: データフレーム
+        target_column: 目的変数のカラム名
+        features_to_drop: 除外する特徴量のカラム名のリスト
+        num_folds: クロスバリデーションの分割数
+        random_state: 乱数シード
+        impute_strategy: 欠損値補完の方法 (mean, median, most_frequentなど)
+
+    Returns:
+        None
+    """
+
+    # 特徴量と目的変数を抽出
+    X = df.drop(features_to_drop + [target_column], axis=1)
+    y = df[target_column]
+
+    # StratifiedKFoldの設定
+    skf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=random_state)
+
+    # 各foldでの処理
+    for train_index, val_index in skf.split(X, y):
+        X_train, X_val = X.iloc[train_index], X.iloc[val_index]
+        y_train, y_val = y.iloc[train_index], y.iloc[val_index]
+
+        # 欠損値を補完
+        imputer = SimpleImputer(strategy=impute_strategy)
+        X_train_imputed = imputer.fit_transform(X_train)
+        X_val_imputed = imputer.transform(X_val)
+
+        # LightGBMモデルを訓練
+        model = LGBMRegressor(verbose=-1)
+        model.fit(X_train_imputed, y_train)
+
+        # モデルを評価
+        y_pred = model.predict(X_val_imputed)
+        rmse = np.sqrt(mean_squared_error(y_val, y_pred))
+        print(f"Fold {fold+1} RMSE: {rmse:.4f}")
+
+# 使用例
+features_to_drop = ['SK_ID_CURR', 'EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']
+target_column = 'EXT_SOURCE_2'
+
+train_and_evaluate_model_with_stratified_kfold(df, target_column, features_to_drop)
+
+#Then, use EXT_SOURCES
+df['EXT_SOURCES_PROD'] = df['EXT_SOURCE_1'] * df['EXT_SOURCE_2'] * df['EXT_SOURCE_3']
+df['EXT_SOURCES_MEAN'] = df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']].mean(axis=1)
+df['EXT_SOURCES_STD'] = df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']].std(axis=1)
+df['EXT_SOURCES_STD'] = df['EXT_SOURCES_STD'].fillna(df['EXT_SOURCES_STD'].mean())
+df['EXT_SOURCES_WEIGHTED_SUM'] = df['EXT_SOURCE_3'] * 5 + df['EXT_SOURCE_1'] * 3 + df['EXT_SOURCE_2'] * 1
+df['EXT_SOURCES_WEIGHTED_AVG'] = (df['EXT_SOURCE_3'] * 5 + df['EXT_SOURCE_1'] * 3 + df['EXT_SOURCE_2'] * 1) / 3
+df['GEO_EXT'] = (df['EXT_SOURCE_1'] * df['EXT_SOURCE_2'] * df['EXT_SOURCE_3']) ** 1/3
+df['EXT_SOURCES_MAX'] = df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']].max(axis=1)
+df['EXT_SOURCES_SUM'] = df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']].sum(axis=1)
+df['EXT_SOURCES_MIN'] = df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']].min(axis=1)
+df['EXT_SOURCES_MEDIAN'] = df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']].median(axis=1)
+  
