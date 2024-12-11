@@ -1,0 +1,106 @@
+def clip_outliers(df, columns=None):
+    if columns is None:
+        columns = df.select_dtypes(include=np.number).columns
+    for col in columns:
+        # 各カラムに対してクリッピング
+        mean = df[col].mean()
+        std = df[col].std()
+        lower_bound = mean - 2.5 * std
+        upper_bound = mean + 2.5 * std
+        df[col] = np.clip(df[col], lower_bound, upper_bound)
+    return df
+
+#外れ値をclipする
+feature = other_cols
+feature = feature.drop('TARGET')
+feature = feature.drop('SK_ID_CURR')
+df = clip_outliers(df,columns = feature)
+
+#bool-typeであること
+def bool_type(df):
+  col_type = {}
+  for col in df:
+    if (df[col].dtype != 'object') and (len(df[col].unique()) <= 3):
+      col_type[col] = bool  # Use the built-in bool type
+  print('Number of boolean variables: ', len(col_type))
+  return col_type
+train_col_type = bool_type(df)
+
+df = df.drop('TARGET', axis = 1)
+
+es = ft.EntitySet(id = 'df')
+es = es.add_dataframe(dataframe = df,
+                      dataframe_name = 'df',
+                      index = 'SK_ID_CURR')
+
+#もっとバラエティがあっても良いかも（要検討）
+default_agg_primitives =  ['sum', 'count', 'min', 'max', 'mean', 'mode','num_true']
+default_trans_primitives =  ['cum_sum', 'cum_mean', 'percentile']
+
+feature_names = ft.dfs(entityset = es,
+                       target_dataframe_name='df',
+                       trans_primitives = default_trans_primitives,
+                       agg_primitives=default_agg_primitives,
+                       max_depth = 2, features_only=True)
+print('%d Total Features' % len(feature_names))
+feature_matrix, feature_names = ft.dfs(entityset = es,
+                                       target_dataframe_name='df',
+                                       trans_primitives = default_trans_primitives,
+                                       agg_primitives=default_agg_primitives,
+                                       max_depth = 2, features_only=False, verbose = True)
+pd.options.display.max_columns = 1500
+
+#ダミー、欠損値が多いもの、同じ値だけのものを排除
+feature_matrix = pd.get_dummies(feature_matrix)
+feature_matrix2 = selection.remove_low_information_features(feature_matrix)
+print('Removed %d features' % (feature_matrix.shape[1]- feature_matrix2.shape[1]))
+
+
+def remove_highly_correlated_features(df, threshold=0.8):
+    """
+    相関係数が高い特徴量を除去する関数
+    Args:
+        df: 特徴量を含むデータフレーム
+        threshold: 相関係数の閾値
+    Returns:
+        pandas.DataFrame: 相関の高い特徴量を除去したデータフレーム
+    """
+    # 相関係数行列を計算
+    corr_matrix = df.corr().abs()
+    # 上三角行列のマスクを作成
+    upper_tri = np.triu(np.ones_like(corr_matrix), k=1)
+    # 閾値を超える相関を持つ特徴量を抽出
+    to_drop = [column for column in corr_matrix.columns if any(corr_matrix.loc[column, upper_tri[column]] > threshold)]
+    print(f'There are {len(to_drop)} features to remove.')
+    # 相関の高い特徴量を除去
+    return df.drop(to_drop, axis=1)
+
+# 使用例
+# feature_matrix: 特徴量を含むデータフレーム
+cleaned_df = remove_highly_correlated_features(feature_matrix, threshold=0.8)
+
+# Scalerを導入して、標準化とNaNを埋める
+scaler = MinMaxScaler(feature_range = (0, 1))
+features = list(feature_matrix.columns)
+train = feature_matrix.copy()
+train = train.replace([np.inf, -np.inf], np.nan)
+scaler.fit(train)
+train = scaler.transform(train)
+feature_matrix = pd.DataFrame(data=train, columns=features)
+
+#データ読み込み
+application_train = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/train (1).csv')
+application_test = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/test (1).csv')
+df = pd.concat([application_train, application_test])
+# Create 'SK_ID_CURR' column in feature_matrix using the index
+feature_matrix['SK_ID_CURR'] = feature_matrix.index
+feature_matrix = pd.merge(feature_matrix, df[['SK_ID_CURR', 'TARGET']], on='SK_ID_CURR', how='left')
+
+#JSONを消す関数
+def clean_feature_name(name):
+    return re.sub(r'[{}\[\]"\'.,;:\s<>：，]', '_', name)
+feature_matrix.columns = [clean_feature_name(col) for col in feature_matrix.columns]
+
+# Split the feature matrix based on whether 'TARGET' is NaN
+application_test = feature_matrix[feature_matrix['TARGET'].isnull()]
+feature_matrix = feature_matrix[feature_matrix['TARGET'].notnull()]
