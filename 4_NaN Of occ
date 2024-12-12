@@ -5,7 +5,7 @@ from sklearn.impute import KNNImputer
 imputer = KNNImputer(n_neighbors=40)#最適な物を選ぶ必要性！！
 
 # 使用する特徴量を選択
-features_for_knn = ['EXT_SOURCE_1','EXT_SOURCE_2','EXT_SOURCE_3','AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'YEARS_EMPLOYED','NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE']
+features_for_knn = ['EXT_SOURCE_1','EXT_SOURCE_2','AMT_INCOME_TOTAL', 'AMT_CREDIT','NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE']
 df_knn = df[features_for_knn + ['OCCUPATION_TYPE']].copy()
 
 from sklearn.preprocessing import LabelEncoder
