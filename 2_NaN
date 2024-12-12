@@ -50,9 +50,9 @@ df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 5 * 365
 
 #As for OWN_CAR_AGE(FLAGとセットで考える。持っている人も申告をしていない可能性がある。）
 df.loc[df['FLAG_OWN_CAR'] == 'N', 'OWN_CAR_AGE'] = 0
-median_OWN_CAR_AGE = df['OWN_CAR_AGE'].meadian()
-df.loc[df['FLAG_OWN_CAR'] == 'Y', OWN_CAR_AGE'] = median_OWN_CAR_AGE
-df.loc[df['FLAG_OWN_CAR'] == 'Unknown, 'OWN_CAR_AGE'] = -1
+median_OWN_CAR_AGE = df['OWN_CAR_AGE'].median()
+df.loc[df['FLAG_OWN_CAR'] == 'Y', 'OWN_CAR_AGE'] = median_OWN_CAR_AGE
+df.loc[df['FLAG_OWN_CAR'] == 'Unknown', 'OWN_CAR_AGE'] = -1
 
 #As for NAME_FAMILY_STATUS
 df['NAME_FAMILY_STATUS'] = df['NAME_FAMILY_STATUS'].fillna('Civil marriage')
