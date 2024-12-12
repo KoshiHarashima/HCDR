@@ -12,7 +12,7 @@ df['NAME_FAMILY_STATUS'] =  df['NAME_FAMILY_STATUS'].replace('Unknown', np.nan)
 
 #As for NAME_TYPE_SUITE with 
 df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Married','Civil marriage'])),'NAME_TYPE_SUITE']= 'Spouse, partner' 
-df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Single / not married','Separated','Widow'])), 'NAME_TYPE_SUITE'] = 'Unaccompanied'
+df['NAME_TYPE_SUITE'] = df['NAME_TYPE_SUITE'].fillna('Unaccompanied')
 
 #As for OCCUPATION_TYPE with no job or in public
 df.loc[(df['OCCUPATION_TYPE'].isna()) & (df['NAME_INCOME_TYPE'] == 'State servant'), 'OCCUPATION_TYPE'] = 'STATE'
@@ -43,10 +43,16 @@ df.loc[df['FLAG_OWN_REALTY'].isna(),'FLAG_OWN_REALTY'] = 'Unknown'
 
 #As for ANNUITY AND GOODS PRICE needed to be considered
 
-#As for DAYS_EMPLOYEDとYEARS_EMPLOYED
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'YEARS_EMPLOYED'] = - df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'AGE'] + 20
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] = 0
-df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 0
+#As for DAYS_EMPLOYED
+df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] =  0
+df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_BIRTH'] - 7300 
+
+#As for OWN_CAR_AGE
+df.loc[df['FLAG_OWN_CAR'] == 'N', OWN_CAR_AGE'] = 0
+
+#As for NAME_FAMILY_STATUS
+df['NAME_FAMILY_STATUS'] = df['NAME_FAMILY_STATUS'].fillna('Civil marriage')
+
 #As for CNT_FAM_MEMBERS
 df['CNT_FAM_MEMBERS'] = df['CNT_FAM_MEMBERS'].fillna(2)
 
@@ -73,15 +79,15 @@ create_day_to_year(df,['DAYS_EMPLOYED'],'YEARS_EMPLOYED')
 create_day_to_year(df, ['DAYS_ID_PUBLISH'], 'YEARS_ID_PUBLISH')
 create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
 create_day_to_year(df, ['DAYS_LAST_PHONE_CHANGE'], 'YEARS_LAST_PHONE_CHANGE')
-
-
-
+# Binning YEARS_EMPLOYED and AGE
+df['YEARS_EMPLOYED_BINNED'] = pd.cut(df['YEARS_EMPLOYED'], bins=range(0, int(df['YEARS_EMPLOYED'].max()) + 5, 5), right=False)
+df['AGE_BINNED'] = pd.cut(df['AGE'], bins=range(0, int(df['AGE'].max()) + 10, 10), right=False)
 #As for AMT_ANNUITY
 def fill_missing_by_group_vectorized(df, group_cols, cols_to_fill):
     for col in cols_to_fill:
         grouped = df.groupby(group_cols)[col]
         median_values = grouped.transform('median')
-        df[col] = df[col].fillna(mean_values)
+        df[col] = df[col].fillna(median_values)
 group_cols = ['YEARS_EMPLOYED_BINNED', 'AGE_BINNED', 'OCCUPATION_TYPE', 'NAME_EDUCATION_TYPE']
 cols_to_fill = ['AMT_ANNUITY']
 fill_missing_by_group_vectorized(df, group_cols, cols_to_fill)
