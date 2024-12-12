@@ -1,21 +1,28 @@
-# As for OCCUPATION_TYPE by K近傍法 
 from sklearn.impute import KNNImputer
-
-# KNN Imputerで欠損値を補完
-imputer = KNNImputer(n_neighbors=40)#最適な物を選ぶ必要性！！
-
-# 使用する特徴量を選択
-features_for_knn = ['EXT_SOURCE_1','EXT_SOURCE_2','AMT_INCOME_TOTAL', 'AMT_CREDIT','NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE']
-df_knn = df[features_for_knn + ['OCCUPATION_TYPE']].copy()
-
 from sklearn.preprocessing import LabelEncoder
-for col in ['OCCUPATION_TYPE', 'NAME_EDUCATION_TYPE', 'ORGANIZATION_TYPE']:
+
+def fill_occupation_type_knn(df):
+  # Select relevant features for KNN
+  features = ['NAME_EDUCATION_TYPE_map', 'EXT_SOURCE_2', 'AMT_INCOME_TOTAL', 'OCCUPATION_TYPE']
+  df_knn = df[features].copy()
+
+  # Create a LabelEncoder for 'OCCUPATION_TYPE'
   le = LabelEncoder()
-  df_knn[col] = le.fit_transform(df_knn[col].astype(str))
+  df_knn['OCCUPATION_TYPE_encoded'] = le.fit_transform(df_knn['OCCUPATION_TYPE'])
 
-# KNN Imputerを実行
-df_knn_imputed = imputer.fit_transform(df_knn)
+  # Use the encoded column for imputation
+  features_for_knn = ['NAME_EDUCATION_TYPE_map', 'EXT_SOURCE_2', 'AMT_INCOME_TOTAL', 'OCCUPATION_TYPE_encoded']
 
-# 結果を元のDataFrameに反映
-df_knn_imputed = pd.DataFrame(df_knn_imputed, columns=features_for_knn + ['OCCUPATION_TYPE'])
-df['OCCUPATION_TYPE'] = df_knn_imputed['OCCUPATION_TYPE']
+  # Create a KNN Imputer
+  imputer = KNNImputer(n_neighbors=30)  # Adjust n_neighbors as needed
+
+  # Fit and transform the data using the encoded column
+  df_knn[features_for_knn] = imputer.fit_transform(df_knn[features_for_knn])
+
+  # Replace the original column with the imputed values (inverse transform to get original labels)
+  df['OCCUPATION_TYPE'] = le.inverse_transform(df_knn['OCCUPATION_TYPE_encoded'].astype(int))
+
+  return df
+df = fill_occupation_type_knn(df)
+
+#28193 left
