@@ -10,41 +10,58 @@ df['ORGANIZATION_TYPE'] = df['ORGANIZATION_TYPE'].replace('XNA', np.nan)
 df['OCCUPATION_TYPE'] = df['OCCUPATION_TYPE'].replace('XNA', np.nan)
 df['NAME_FAMILY_STATUS'] =  df['NAME_FAMILY_STATUS'].replace('Unknown', np.nan)
 
+#As for NAME_TYPE_SUITE with 
+df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Married','Civil marriage'])),'NAME_TYPE_SUITE']= 'Spouse, partner' 
+df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Single / not married','Separated','Widow'])), 'NAME_TYPE_SUITE'] = 'Unaccompanied'
+
+#As for OCCUPATION_TYPE with no job or in public
+df.loc[(df['OCCUPATION_TYPE'].isna()) & (df['NAME_INCOME_TYPE'] == 'State servant'), 'OCCUPATION_TYPE'] = 'STATE'
+df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Unemployed'])), 'OCCUPATION_TYPE'] = 'NOT_WORK'
+df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Pensioner'])), 'OCCUPATION_TYPE'] = 'RETIRED'
+df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Student'])), 'OCCUPATION_TYPE'] = 'SCHOOL'
+
+#As for ORGANIZATION_TYPE with no job
+df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Pensioner'])), 'ORGANIZATION_TYPE'] = 'PENSIONER'
+df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Unemployed'])), 'ORGANIZATION_TYPE'] = 'NO_WORK'
+
 #Count NaN values so that we can evaluate credibility from that data
 df['NOT_TYPE_SUITE'] = df['NAME_FAMILY_STATUS'].isnull().astype(int)
 df['NOT_SUBMITTED_BUREAU'] = (df[['AMT_REQ_CREDIT_BUREAU_HOUR', 'AMT_REQ_CREDIT_BUREAU_MON', 'AMT_REQ_CREDIT_BUREAU_YEAR', 'AMT_REQ_CREDIT_BUREAU_QRT']].isnull().any(axis=1)).astype(int)
 df['NOT_SUBMITTED_FLAG'] = df[['FLAG_OWN_CAR', 'FLAG_OWN_REALTY']].isnull().any(axis=1).astype(int)
 df['NON_SUBMITTED_OBS_DEF'] = (df[['OBS_30_CNT_SOCIAL_CIRCLE', 'DEF_30_CNT_SOCIAL_CIRCLE','OBS_60_CNT_SOCIAL_CIRCLE','DEF_60_CNT_SOCIAL_CIRCLE']].isnull().any(axis=1)).astype(int)
 df['NOT_SUBMITTED_JOB'] = df[['ORGANIZATION_TYPE']].isnull().astype(int)
-
 drop_column = ['AMT_REQ_CREDIT_BUREAU_HOUR', 'AMT_REQ_CREDIT_BUREAU_MON', 'AMT_REQ_CREDIT_BUREAU_YEAR', 'AMT_REQ_CREDIT_BUREAU_QRT',
                'OBS_30_CNT_SOCIAL_CIRCLE', 'DEF_30_CNT_SOCIAL_CIRCLE','OBS_60_CNT_SOCIAL_CIRCLE','DEF_60_CNT_SOCIAL_CIRCLE']
 df['NaN_count'] = df.drop(drop_column, axis=1).isnull().sum(axis=1)  + df['NON_SUBMITTED_OBS_DEF'] + df['NOT_SUBMITTED_BUREAU'] 
 
 # Fill NaN values in a most frequent and reasonable way
-#As for NAME_TYPE_SUITE
-df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Married','Civil marriage'])),'NAME_TYPE_SUITE']= 'Spouse, partner' 
-df.loc[(df['NAME_TYPE_SUITE'].isnull()) & (df['NAME_FAMILY_STATUS'].isin(['Single / not married','Separated','Widow'])), 'NAME_TYPE_SUITE'] = 'Unaccompanied'
+#As for FLAG_OWN_CAR
+df.loc[df['FLAG_OWN_CAR'].isna(), 'FLAG_OWN_CAR'] = 'Unknown'
 
-#As for OCCUPATION_TYPE
-df.loc[(df['OCCUPATION_TYPE'].isna()) & (df['NAME_INCOME_TYPE'] == 'State servant'), 'OCCUPATION_TYPE'] = 'STATE'
-df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Unemployed'])), 'OCCUPATION_TYPE'] = 'NOT_WORK'
-df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Pensioner'])), 'OCCUPATION_TYPE'] = 'RETIRED'
-df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Student'])), 'OCCUPATION_TYPE'] = 'SCHOOL'
-                                          
-#As for ORGANIZATION_TYPE
-df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Pensioner'])), 'ORGANIZATION_TYPE'] = 'PENSIONER'
-df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Unemployed'])), 'ORGANIZATION_TYPE'] = 'NO_WORK'
+#As for FLAG_OWN_REALLTY
+df.loc[df['FLAG_OWN_REALTY'].isna(),'FLAG_OWN_REALTY'] = 'Unknown' 
 
-#As for AMT_BUREAU, OBS, and DEF
+#As for ANNUITY AND GOODS PRICE needed to be considered
+
+#As for DAYS_EMPLOYEDとYEARS_EMPLOYED
+df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'YEARS_EMPLOYED'] = - df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'AGE'] + 20
+df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] = 0
+df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 0
+#As for CNT_FAM_MEMBERS
+df['CNT_FAM_MEMBERS'] = df['CNT_FAM_MEMBERS'].fillna(2)
+
+#EXT_SOURCE_1_2_3 needed to be considered
+
+#As for AMT_BUREAU,Phone, OBS, and DEF
 df['AMT_REQ_CREDIT_BUREAU_HOUR'] = df['AMT_REQ_CREDIT_BUREAU_HOUR'].fillna(0)
 df['AMT_REQ_CREDIT_BUREAU_MON'] = df['AMT_REQ_CREDIT_BUREAU_MON'].fillna(0)
 df['AMT_REQ_CREDIT_BUREAU_QRT'] = df['AMT_REQ_CREDIT_BUREAU_QRT'].fillna(0)
 df['AMT_REQ_CREDIT_BUREAU_YEAR'] = df['AMT_REQ_CREDIT_BUREAU_YEAR'].fillna(0)
+df['DAYS_LAST_PHONE_CHANGE'] = df['DAYS_LAST_PHONE_CHANGE'].fillna(df['DAYS_LAST_PHONE_CHANGE'].median())
 df['OBS_30_CNT_SOCIAL_CIRCLE'] = df['OBS_30_CNT_SOCIAL_CIRCLE'].fillna(0)
 df['DEF_30_CNT_SOCIAL_CIRCLE'] = df['DEF_30_CNT_SOCIAL_CIRCLE'].fillna(0)
 df['OBS_60_CNT_SOCIAL_CIRCLE'] = df['OBS_60_CNT_SOCIAL_CIRCLE'].fillna(0)
-df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)    
+df['DEF_60_CNT_SOCIAL_CIRCLE'] = df['DEF_60_CNT_SOCIAL_CIRCLE'].fillna(0)
 
 #About Time
 def create_day_to_year(df, ls_cols, newcols):
@@ -57,41 +74,16 @@ create_day_to_year(df, ['DAYS_ID_PUBLISH'], 'YEARS_ID_PUBLISH')
 create_day_to_year(df, ['DAYS_REGISTRATION'], 'YEARS_REGISTRATION')
 create_day_to_year(df, ['DAYS_LAST_PHONE_CHANGE'], 'YEARS_LAST_PHONE_CHANGE')
 
-#As for DAYS_EMPLOYEDとYEARS_EMPLOYED
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'YEARS_EMPLOYED'] = - df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'AGE'] + 20
-df['YEARS_EMPLOYED_PERCENT'] = df['YEARS_EMPLOYED'] / (df['AGE'] - 20)
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] = 0
-df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 0
 
-#まだNaNがDaysに残っていることに注意
+
+#As for AMT_ANNUITY
 def fill_missing_by_group_vectorized(df, group_cols, cols_to_fill):
     for col in cols_to_fill:
         grouped = df.groupby(group_cols)[col]
         median_values = grouped.transform('median')
         df[col] = df[col].fillna(mean_values)
-
 group_cols = ['YEARS_EMPLOYED_BINNED', 'AGE_BINNED', 'OCCUPATION_TYPE', 'NAME_EDUCATION_TYPE']
-cols_to_fill = ['AMT_ANNUITY', 'AMT_GOODS_PRICE', 'DAYS_LAST_PHONE_CHANGE']
+cols_to_fill = ['AMT_ANNUITY']
 fill_missing_by_group_vectorized(df, group_cols, cols_to_fill)
 
-
-#As for AMT_ANNUITY(!!)
-df['AMT_ANNUITY'] = df['AMT_ANNUITY'] .fillna(df['AMT_ANNUITY'].median())
-df['AMT_GOODS_PRICE'] = df['AMT_GOODS_PRICE'].fillna(df["AMT_GOODS_PRICE"].median())
-df['DAYS_LAST_PHONE_CHANGE'] = df['DAYS_LAST_PHONE_CHANGE'].fillna(df['DAYS_LAST_PHONE_CHANGE'].median())
-df['YEARS_LAST_PHONE_CHANGE'] = df['YEARS_LAST_PHONE_CHANGE'].fillna(df['YEARS_LAST_PHONE_CHANGE'].median())
-
-#As for OWN_CAR_AGE(!!)
-#As for FLAG_OWN_CAR
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'F'), 'FLAG_OWN_CAR'] = 'N'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 0), 'FLAG_OWN_CAR'] = 'N'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 1), 'FLAG_OWN_CAR'] = 'N'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 2), 'FLAG_OWN_CAR'] = 'Y'
-df.loc[(df['FLAG_OWN_CAR'].isna()) & (df['CODE_GENDER'] == 'M') & (df['OCCUPATION_TYPE_PREJUDICE'] == 3), 'FLAG_OWN_CAR'] = 'Y'     
-df['OWN_CAR_AGE'] = df['OWN_CAR_AGE'].fillna(0)
-
-#As for FLAG_OWN_REALLTY(!!)
-df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['House / apartment', 'Co-op apartment', 'Office apartment'])),'FLAG_OWN_REALTY'] = 'Y'
-df.loc[(df['FLAG_OWN_REALTY'].isna()) &(df['NAME_HOUSING_TYPE'].isin(['Municipal apartment', 'Rented apartment', 'With parents'])),'FLAG_OWN_REALTY'] = 'N'  
-
-                                      
+#'AMT_GOODS_PRICE'
