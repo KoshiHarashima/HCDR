@@ -45,10 +45,11 @@ df.loc[df['FLAG_OWN_REALTY'].isna(),'FLAG_OWN_REALTY'] = 'Unknown'
 
 #As for DAYS_EMPLOYED
 df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] =  0
-df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_BIRTH'] - 7300 
+df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 5 * 365
 
 #As for OWN_CAR_AGE(FLAGとセットで考える。持っている人も申告をしていない可能性がある。）
 df.loc[df['FLAG_OWN_CAR'] == 'N', OWN_CAR_AGE'] = 0
+
 
 #As for NAME_FAMILY_STATUS
 df['NAME_FAMILY_STATUS'] = df['NAME_FAMILY_STATUS'].fillna('Civil marriage')
@@ -93,3 +94,4 @@ cols_to_fill = ['AMT_ANNUITY']
 fill_missing_by_group_vectorized(df, group_cols, cols_to_fill)
 
 #'AMT_GOODS_PRICE'
+#”AMT_CREDIT”と"AMT_ANNUITYとAMT＿INCOME_TOTALとOCCUPATION_TYPEから
