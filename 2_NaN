@@ -35,10 +35,11 @@ drop_column = ['AMT_REQ_CREDIT_BUREAU_HOUR', 'AMT_REQ_CREDIT_BUREAU_MON', 'AMT_R
 df['NaN_count'] = df.drop(drop_column, axis=1).isnull().sum(axis=1)  + df['NON_SUBMITTED_OBS_DEF'] + df['NOT_SUBMITTED_BUREAU'] 
 
 # Fill NaN values in a most frequent and reasonable way
+
 #As for FLAG_OWN_CAR
 df.loc[df['FLAG_OWN_CAR'].isna(), 'FLAG_OWN_CAR'] = 'Unknown'
 
-#As for FLAG_OWN_REALLTY
+#As for FLAG_OWN_REALTY
 df.loc[df['FLAG_OWN_REALTY'].isna(),'FLAG_OWN_REALTY'] = 'Unknown' 
 
 #As for ANNUITY AND GOODS PRICE needed to be considered
@@ -48,8 +49,10 @@ df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] =  0
 df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 5 * 365
 
 #As for OWN_CAR_AGE(FLAGとセットで考える。持っている人も申告をしていない可能性がある。）
-df.loc[df['FLAG_OWN_CAR'] == 'N', OWN_CAR_AGE'] = 0
-
+df.loc[df['FLAG_OWN_CAR'] == 'N', 'OWN_CAR_AGE'] = 0
+median_OWN_CAR_AGE = df['OWN_CAR_AGE'].meadian()
+df.loc[df['FLAG_OWN_CAR'] == 'Y', OWN_CAR_AGE'] = median_OWN_CAR_AGE
+df.loc[df['FLAG_OWN_CAR'] == 'Unknown, 'OWN_CAR_AGE'] = -1
 
 #As for NAME_FAMILY_STATUS
 df['NAME_FAMILY_STATUS'] = df['NAME_FAMILY_STATUS'].fillna('Civil marriage')
@@ -83,6 +86,7 @@ create_day_to_year(df, ['DAYS_LAST_PHONE_CHANGE'], 'YEARS_LAST_PHONE_CHANGE')
 # Binning YEARS_EMPLOYED and AGE
 df['YEARS_EMPLOYED_BINNED'] = pd.cut(df['YEARS_EMPLOYED'], bins=range(0, int(df['YEARS_EMPLOYED'].max()) + 5, 5), right=False)
 df['AGE_BINNED'] = pd.cut(df['AGE'], bins=range(0, int(df['AGE'].max()) + 10, 10), right=False)
+
 #As for AMT_ANNUITY
 def fill_missing_by_group_vectorized(df, group_cols, cols_to_fill):
     for col in cols_to_fill:
@@ -93,5 +97,13 @@ group_cols = ['YEARS_EMPLOYED_BINNED', 'AGE_BINNED', 'OCCUPATION_TYPE', 'NAME_ED
 cols_to_fill = ['AMT_ANNUITY']
 fill_missing_by_group_vectorized(df, group_cols, cols_to_fill)
 
-#'AMT_GOODS_PRICE'
-#”AMT_CREDIT”と"AMT_ANNUITYとAMT＿INCOME_TOTALとOCCUPATION_TYPEから
+#As for 'AMT_GOODS_PRICE'
+# グループ化して中央値を計算
+grouped = df.groupby(['AMT_CREDIT_BIN','AMT_ANNUITY_BIN','OCCUPATION_TYPE','CNT_FAM_MEMBERS','AGE_BINNED'])['AMT_GOODS_PRICE'].median()
+# groupedに存在しない組み合わせに対してNaNを埋めるように変更
+df['AMT_GOODS_PRICE'] = df.apply(
+    lambda x: grouped.get((x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'], x['OCCUPATION_TYPE'],x['CNT_FAM_MEMBERS'],x['AGE_BINNED'])) 
+              if pd.isnull(x['AMT_GOODS_PRICE']) and (x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'], x['OCCUPATION_TYPE'],x['CNT_FAM_MEMBERS'],x['AGE_BINNED']) in grouped.index
+              else x['AMT_GOODS_PRICE'], 
+    axis=1
+)
