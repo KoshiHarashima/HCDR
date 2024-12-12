@@ -97,13 +97,20 @@ group_cols = ['YEARS_EMPLOYED_BINNED', 'AGE_BINNED', 'OCCUPATION_TYPE', 'NAME_ED
 cols_to_fill = ['AMT_ANNUITY']
 fill_missing_by_group_vectorized(df, group_cols, cols_to_fill)
 
-#As for 'AMT_GOODS_PRICE'
-# グループ化して中央値を計算
-grouped = df.groupby(['AMT_CREDIT_BIN','AMT_ANNUITY_BIN','OCCUPATION_TYPE','CNT_FAM_MEMBERS','AGE_BINNED'])['AMT_GOODS_PRICE'].median()
-# groupedに存在しない組み合わせに対してNaNを埋めるように変更
+#As for 'AMT_GOODS_PRICE' 46 left to fill
+grouped = df.groupby(['AMT_CREDIT_BIN','AMT_ANNUITY_BIN','OCCUPATION_TYPE','CNT_FAM_MEMBERS_BIN'])['AMT_GOODS_PRICE'].median()
 df['AMT_GOODS_PRICE'] = df.apply(
-    lambda x: grouped.get((x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'], x['OCCUPATION_TYPE'],x['CNT_FAM_MEMBERS'],x['AGE_BINNED'])) 
-              if pd.isnull(x['AMT_GOODS_PRICE']) and (x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'], x['OCCUPATION_TYPE'],x['CNT_FAM_MEMBERS'],x['AGE_BINNED']) in grouped.index
+    lambda x: grouped.get((x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'], x['OCCUPATION_TYPE'],x['CNT_FAM_MEMBERS_BIN'])) 
+              if pd.isnull(x['AMT_GOODS_PRICE']) and (x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'], x['OCCUPATION_TYPE'],x['CNT_FAM_MEMBERS_BIN']) in grouped.index
+              else x['AMT_GOODS_PRICE'], 
+    axis=1
+)
+
+#For people with NaN value in Occupation
+grouped = df.groupby(['AMT_CREDIT_BIN','AMT_ANNUITY_BIN','CNT_FAM_MEMBERS_BIN'])['AMT_GOODS_PRICE'].median()
+df['AMT_GOODS_PRICE'] = df.apply(
+    lambda x: grouped.get((x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'],x['CNT_FAM_MEMBERS_BIN'])) 
+              if pd.isnull(x['AMT_GOODS_PRICE']) and (x['AMT_CREDIT_BIN'], x['AMT_ANNUITY_BIN'],x['CNT_FAM_MEMBERS_BIN']) in grouped.index
               else x['AMT_GOODS_PRICE'], 
     axis=1
 )
