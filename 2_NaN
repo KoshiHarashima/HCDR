@@ -24,7 +24,7 @@ df.loc[(df['OCCUPATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Student
 df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Pensioner'])), 'ORGANIZATION_TYPE'] = 'PENSIONER'
 df.loc[(df['ORGANIZATION_TYPE'].isnull()) & (df['NAME_INCOME_TYPE'].isin(['Unemployed'])), 'ORGANIZATION_TYPE'] = 'NO_WORK'
 
-#Count NaN values so that we can evaluate credibility from that data
+#Count NaN values so that we can evaluate credibility from that data（持っているのに申告しない人の方が危険なのでは？？）
 df['NOT_TYPE_SUITE'] = df['NAME_FAMILY_STATUS'].isnull().astype(int)
 df['NOT_SUBMITTED_BUREAU'] = (df[['AMT_REQ_CREDIT_BUREAU_HOUR', 'AMT_REQ_CREDIT_BUREAU_MON', 'AMT_REQ_CREDIT_BUREAU_YEAR', 'AMT_REQ_CREDIT_BUREAU_QRT']].isnull().any(axis=1)).astype(int)
 df['NOT_SUBMITTED_FLAG'] = df[['FLAG_OWN_CAR', 'FLAG_OWN_REALTY']].isnull().any(axis=1).astype(int)
@@ -47,7 +47,7 @@ df.loc[df['FLAG_OWN_REALTY'].isna(),'FLAG_OWN_REALTY'] = 'Unknown'
 df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] =  0
 df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_BIRTH'] - 7300 
 
-#As for OWN_CAR_AGE
+#As for OWN_CAR_AGE(FLAGとセットで考える。持っている人も申告をしていない可能性がある。）
 df.loc[df['FLAG_OWN_CAR'] == 'N', OWN_CAR_AGE'] = 0
 
 #As for NAME_FAMILY_STATUS
