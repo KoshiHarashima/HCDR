@@ -61,12 +61,6 @@ df['has_job'] = (df['DAYS_EMPLOYED']>0).astype(int)
 df['LONG_EMPLOYMENT'] = (df['DAYS_EMPLOYED'] < -1700).astype(int)
 df['RETIREMENT_AGE'] = (df['DAYS_EMPLOYED'] < -14000).astype(int)
 
-#As for DAYS_EMPLOYEDとYEARS_EMPLOYED
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'YEARS_EMPLOYED'] = - df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'AGE'] + 20
-df['YEARS_EMPLOYED_PERCENT'] = df['YEARS_EMPLOYED'] / (df['AGE'] - 20)
-df.loc[df['NAME_INCOME_TYPE'] == 'Unemployed', 'DAYS_EMPLOYED'] = 0
-df.loc[df['NAME_INCOME_TYPE'] == 'Pensioner', 'DAYS_EMPLOYED'] = 0
-
 #大小関係
 df['YEARS_EMPLOYED_GREATER_THAN_ID'] = (df['YEARS_EMPLOYED'] > df['YEARS_ID_PUBLISH']).astype(int)
 df['YEARS_EMPLOYED_GREATER_THAN_REGISTRATION'] = (df['YEARS_EMPLOYED'] > df['YEARS_REGISTRATION']).astype(int)
