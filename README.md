@@ -1,2 +1,3 @@
-# HCDR
-#THIS IS THE CODE I WRITE FOR COMPETITION 2 OF GCI. THiS IS MY FIRST STUCK OF CODE IN GitHub
+・GCIでのコンペ2に使用したコードである。
+
+・未熟な点が多い点はご容赦願いたい。
