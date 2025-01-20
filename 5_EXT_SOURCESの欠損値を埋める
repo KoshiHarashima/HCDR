@@ -1,3 +1,5 @@
+#EXT_SOURCESが最も大事な指標であるため、慎重にNaNを埋めた。
+
 #Before As for EXT_SOURCES 
 df = pd.get_dummies(df)
 df= df.rename(columns = lambda x:re.sub('[^A-Za-z0-9_]+', '', x))
