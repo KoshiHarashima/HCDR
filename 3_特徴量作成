@@ -1,3 +1,5 @@
+#特徴量作成にあたってはKaggleでのDiscussionを大いに参考にしtあ。自分で作った特徴量もいくつかあるがどうやらあまり重要ではないようだ。
+
 #Create features about credibility_1
 median_income_by_occupation = df.groupby('OCCUPATION_TYPE')['AMT_INCOME_TOTAL'].median()
 df['TRUSTFUL_occ'] = (df['AMT_INCOME_TOTAL'] / df['OCCUPATION_TYPE'].map(median_income_by_occupation) - 1) **2
