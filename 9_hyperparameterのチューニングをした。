@@ -6,6 +6,9 @@ from sklearn.metrics import roc_auc_score
 from hyperopt import hp, tpe, fmin, Trials
 import optuna  # Optuna を利用する場合
 
+
+#個々で別々に行なったため概要だけ記す
+
 def objective(params, model_class, X, y, scoring='roc_auc', cv=5):
     model = model_class(**params)
     scores = cross_val_score(model, X, y, scoring=scoring, cv=cv)
