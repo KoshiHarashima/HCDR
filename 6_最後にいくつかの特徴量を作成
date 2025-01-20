@@ -1,3 +1,5 @@
+#全ての処理が終わった後、グループでの平均といったメタ的な特徴量をいくつか作った。
+
 application_train = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/train (1).csv')
 application_test = pd.read_csv('/content/drive/MyDrive/Home Credit Default Risk_input/test (1).csv')
 df_fixed = pd.concat([application_train, application_test])
