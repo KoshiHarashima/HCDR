@@ -1,4 +1,5 @@
-＃null importance
+＃null importanceでの特徴量選択を行った。これはkaggleのDiscussionで最も良いやり方とされていた。そこでのコードを拝借した。Oliverのものである。
+
 categorical_feats = [
     f for f in feature_matrix.columns if feature_matrix[f].dtype == 'object'
 ]
