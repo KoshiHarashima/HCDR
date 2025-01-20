@@ -1,3 +1,5 @@
+#特徴量の数を選択する前にたくさん作った方が良いと聞いたため、四則演算で作った特徴量をたくさん加えた
+
 def clip_outliers(df, columns=None):
     if columns is None:
         columns = df.select_dtypes(include=np.number).columns
