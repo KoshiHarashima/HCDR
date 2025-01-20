@@ -7,6 +7,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
+＃oofでメタ特徴量を色々なモデルから生成した。これが一番大変だった。
+
 def train_and_predict(X_train, y_train, X_test, models, params, cv=5, scoring='roc_auc'):
     oof_preds = np.zeros((X_train.shape[0], len(models)))
     test_preds_all = np.zeros((X_test.shape[0], len(models), cv))
